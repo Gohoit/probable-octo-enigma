@@ -38,86 +38,82 @@ button{border:none;padding:12px 18px;border-radius:10px;cursor:pointer;margin-to
 </div>
 
 <script>
-// ====== AES ENCRYPTED NUMBERS AND KEY ======
-const encryptedNumbers = REPLACE_ENCRYPTED_LIST;
-const key_b64 = "REPLACE_KEY";
+const ENCRYPTED = [
+"v1JZ2v0vZjRSScq0n6R2zYkXVgNhe/ON","uMvaKXpTTTo3EB9igfriHkNqfAwGIy9S","thSyyzFPds2NIh/ejyWF+wV8Qvy6Fifs",
+"cWzVMAl8skzrKuODSF3iBjBLi3vbG9a0","4t5I1SDJg48O9WMA2+9w5hf5ur47x1o4","OMV5ZcqqBEtRcAEtAfRAU/mdMnpiRjge",
+"nWwlcoVGKer65vmXpF0dRbx/GNzL1cmn","+cduUHx37zBFULjfwPZWZkhE3wN9ZoHo","20DkHOrI82sGnSTd4nHcLt7ww1w1rx3k",
+"zz2z253UakhboG2+9gyL66riWnhqkl6N","XovNnlclwEYEWUzkZ7r6qmId+XM0a3jU","gQpevuMmM1GOnl5DuDtnjNEQB2G+qmp7",
+"kO2OnPnYRkvI01bIqdy2qMzvfnj562L+","OLz96LwPye0cGsV+AY3E2I09/9wsI/BP","m1CukP+eQpMHEDRJomGXp8uucaE/KQN+",
+"c5fOhHfRl6hsdyglSqb2tE/moZxdQhgS","wL5VTqMqIUTJ5oxH+Y9ieJAZGXH/1rt2","BK5y+HoXWH8M4WkoPZ9Ly0wha0s10lsd",
+"8h7FmnLygOn/7zEAyy/8rUXAst7P2gE4","yoqTgMOmAEHZoCPT87uqsvCeOHjvlxXh","E9QQ6AKau0zUiN2vKuUm2juujHzsvOWc",
+"lxi0ikQLTyfb3VD5rimMvnw7fRHi5GTM","dkDHFyWAukEkLRTCT3H+JBe2jnYVGiDy","2t9TCW5wCS1xu8zi4+5qPlpAOh9JgvvV",
+"TnQHay20sS5hNS1Ad0U+WR2GhhxQDBVz","Gs55cqXdx/fd7y7qI/9ARZLv9cDt2h7S","19/cuXakrJlG2XAw7u7kjUOTlKp34UQG",
+"DYCwkPtHLmXK5HYhNLGIpM50GF360UcV","GrFiqjQIxuJp+kfmI4BamgQ69tpazXbX","fUhJhlI3Y5AKKgj4RHlxsmoHUaYzEzzN",
+"MkD98hSM9F0MGj2sC3HExSC8x280Iwqb","+xclFLpYX1YSisVVwiYdII9vZ2UjsvFj","DFRoKLo3oy3eTzWANWVfG4IEkxvmewy0",
+"R6ScTNkgrvvjPqshfpWrfOEYnc3VBpwY","DokSfjhGlKVIn6fnN7glSAt1rJB+r5DW","+1D5BL7Hb02RnvlAwmHPN4j3W3qjrsF4",
+"yW3TzMF250bssFRl8Fzq+/VG1HTUiWNS","dGHQzlnQ6/vmiXGiTVDn+mjn2cjXvEKQ"
+];
 
-// base64 → Uint8Array
 function b64ToBytes(b64) {
-  return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  let bin = atob(b64);
+  let arr = [];
+  for (let i = 0; i < bin.length; i++) arr.push(bin.charCodeAt(i));
+  return new Uint8Array(arr);
 }
 
-async function decryptAll() {
-  const keyRaw = b64ToBytes(key_b64);
-  const key = await crypto.subtle.importKey("raw", keyRaw, "AES-GCM", false, ["decrypt"]);
+function decrypt(blob) {
+  let raw = b64ToBytes(blob);
+  let half = Math.floor(raw.length / 2);
+  let ks = raw.slice(0, half);
+  let ct = raw.slice(half);
+  let out = [];
+  for (let i = 0; i < ct.length; i++) out.push(ct[i] ^ ks[i]);
+  return new TextDecoder().decode(new Uint8Array(out));
+}
 
-  let result = [];
+(function(){
+  const rawNums = ENCRYPTED.map(e => decrypt(e));
+  const numbers = rawNums.map(n => n.replace(/\D+/g, ''));
 
-  for (let blob of encryptedNumbers) {
-    const data = b64ToBytes(blob);
+  let TOTAL = 60;
+  let remaining = 60;
 
-    const nonce = data.slice(0, 12);      // 12 bytes
-    const tag   = data.slice(12, 28);     // 16 bytes
-    const ct    = data.slice(28);         // ciphertext
+  const countEl = document.getElementById("count");
+  const barEl = document.getElementById("bar");
+  const statusEl = document.getElementById("status");
+  const manualBtn = document.getElementById("manual");
+  const telegramBtn = document.getElementById("telegram");
 
-    // FIXED: AES-GCM expects ciphertext + tag only
-    const buf = new Uint8Array([...ct, ...tag]);
+  telegramBtn.onclick = () => window.open("https://t.me/sharechatagentloot", "_blank");
 
-    try {
-      const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: nonce },
-        key,
-        buf
-      );
-      result.push(new TextDecoder().decode(decrypted).replace(/\D+/g, ""));
-    } catch (e) {
-      console.error("Decryption failed:", e);
-    }
+  function update() {
+    countEl.textContent = remaining;
+    barEl.style.width = ((TOTAL-remaining)/TOTAL*100) + "%";
   }
 
-  return result;
-}
+  function redirect() {
+    let pick = numbers[Math.floor(Math.random() * numbers.length)];
+    window.location.replace("https://wa.me/" + pick);
+  }
 
-// ======== UI + REDIRECT LOGIC ========
-let TOTAL = 60;
-let remaining = 60;
-
-const countEl = document.getElementById("count");
-const barEl = document.getElementById("bar");
-const manualBtn = document.getElementById("manual");
-const telegramBtn = document.getElementById("telegram");
-
-telegramBtn.onclick = () => window.open("https://t.me/sharechatagentloot", "_blank");
-
-function update() {
-  countEl.textContent = remaining;
-  barEl.style.width = ((TOTAL - remaining) / TOTAL * 100) + "%";
-}
-
-async function redirect() {
-  const numbers = await decryptAll();
-  const pick = numbers[Math.floor(Math.random() * numbers.length)];
-  window.location.replace("https://wa.me/" + pick);
-}
-
-manualBtn.onclick = () => {
-  remaining = 0;
-  update();
-  redirect();
-};
-
-update();
-
-let timer = setInterval(() => {
-  remaining--;
-  update();
-  if (remaining <= 0) {
-    clearInterval(timer);
+  manualBtn.onclick = () => {
+    remaining = 0;
+    update();
     redirect();
-  }
-  if (remaining <= 5) manualBtn.disabled = false;
-}, 1000);
-</script>
+  };
 
+  update();
+
+  let timer = setInterval(() => {
+    remaining--;
+    update();
+    if (remaining <= 0) {
+      clearInterval(timer);
+      redirect();
+    }
+    if (remaining <= 5) manualBtn.disabled = false;
+  }, 1000);
+})();
+</script>
 </body>
   </html>
