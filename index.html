@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Assigning an agent — please wait</title>
+<meta name="robots" content="noindex">
+<style>
+body{font-family:system-ui,Arial,sans-serif;background:radial-gradient(circle at 20% 20%, #0f0c29, #302b63, #24243e);
+background-image:url('https://images.unsplash.com/photo-1535223289827-42f1e9919769?auto=format&fit=crop&w=1500&q=80');
+background-size:cover;background-position:center;color:#e0f2fe;
+display:flex;align-items:center;justify-content:center;height:100vh;margin:0;overflow:hidden}
+.overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:0}
+.card{position:relative;z-index:1;background:rgba(15,23,42,0.85);padding:32px;border-radius:16px;
+box-shadow:0 0 40px rgba(0,255,255,0.3);max-width:620px;width:94%;text-align:center;backdrop-filter:blur(8px)}
+h1{margin:0 0 8px;font-size:22px;color:#7dd3fc;text-shadow:0 0 10px #0ea5e9}
+.count{font-weight:700;font-size:42px;margin:16px 0;color:#f472b6;text-shadow:0 0 15px #f472b6}
+.small{font-size:14px;color:#a5b4fc}
+button{border:none;padding:12px 18px;border-radius:10px;cursor:pointer;margin-top:14px;font-size:15px;transition:.3s ease}
+#manual{background:linear-gradient(90deg,#06b6d4,#3b82f6);color:white;box-shadow:0 0 15px #3b82f6}
+#manual[disabled]{opacity:.5;cursor:not-allowed;box-shadow:none}
+#telegram{background:linear-gradient(90deg,#ec4899,#8b5cf6);color:white;box-shadow:0 0 15px #a855f7;margin-left:8px}
+.progress{height:10px;background:#1e293b;border-radius:999px;margin-top:12px;overflow:hidden}
+.bar{height:100%;width:0%;background:linear-gradient(90deg,#34d399,#06b6d4);box-shadow:0 0 20px #06b6d4}
+</style>
+</head>
+<body>
+<div class="overlay"></div>
+<div class="card" role="main" aria-live="polite">
+  <h1>Please wait — assigning an available WhatsApp agent</h1>
+  <p class="small">This helps distribute chats fairly. Do not close this page.</p>
+  <div class="count" id="count">60</div>
+  <div class="progress" aria-hidden="true"><div id="bar" class="bar"></div></div>
+  <p id="status" class="small">You will be redirected when the timer ends.</p>
+  <button id="manual" disabled>Redirect now (disabled)</button>
+  <button id="telegram">Contact on Telegram</button>
+  <p class="small" style="margin-top:10px">If auto-redirect fails, please check your network or try again later.</p>
+</div>
+
+<script>
+const encryptedNumbers = ["NeGSOjKO7mzoEDVlGndD2HCkJ+/WLXBUIEH1xBNFvz2MdDt+0VDUK1c=", "Ygdxl22piOJFq+yWUItSz2ckq0JBIof83kn8KKc2xnCA2J9j3VdZNx0=", "1Q2z8dPxrFU5dEEi18dpgWBQMGShjhbaMPIHwjLaGTmZ4epMnlSSKgQ=", "rpXyTCAS0hqpTkFFddyIMtrKsb3eP7iK1BUk/VaaWKzCFJrwWVoyQsc=", "6yxdnuEGcQSILPVDd7ROe2Nukz7N0eEfmkzqdYFCt/oFPk1EdO16sEo=", "Go5MUkcz1Hho4h3ssb3FxhDPB2uhs+DlL0s62fZReOFA2J0vpNAcb7w=", "9XUyeTu9iMHPgNezjPnjsPZyL1r7bNwYm2x34cvSlRpc1TbIqA+Si7s=", "D4ywTLYrfI6mXoS03/EfBoAH3cgEECLtat4CLQLrkxfRpZGmH0c66qM=", "ccd96ucmndjAafFTpW+JFpSlEPW/hd9KZnIfgBIAoqGkNWY0NTklNno=", "AHJ6lnYkMDfE/muJdngpEuqP1qVKMbei/RsKX+lPJ2GbOCeZPVfQ6lY=", "YpDgKq6sjW5vpN4kM3xXpByytKbfWD+r9QCCl2GYSP/WjMPjpoRoYb0=", "QURayivR6aZiUjpemELZ3kOz0/Hd4mpq2l+yt/bMEKoAn1fZMBvEfB4=", "gJ9q4chqtt+5I2wGYHa4JYcJYS0P7wJMmnLaL0RMzd2iG7w5E8jR2fc=", "RfMyo1ZdD6S/W2rTlHTY27U8vAXz9821Eln+vMiF+nBTLgEqjL0c8/c=", "yaF9vYRYH8koHeTenLBeB5gzyo/YIW4keZ6lLFooM29eL95IEeJyX0Y=", "UM5auCeeWcaw5kU2HBsLKZxF/H5hnRCEJipdg5+KQJBxdIv3jtrNthw=", "AD2xZxUv1qh0OAzhAmLtlOZzPcR9Pe0MsH0xwsGBaKizqQnzUtMDxVw=", "asSxnsaXbVPfMikIZcdwxf6z2OM8h8HbKqm4D8Q63yoXg/Bh6jUNL2E=", "PrZYI8OVZACBJrOos6fBPCTqHstoA3siz8HlyZZHnVw31AJpCVgfhjM=", "NiWJc9dRSwagBlJSx6+8W4koH7GQVHLLcbEjBIsz1hu83pl5ehmCL4o=", "ThldLQbNVTP9a+zBr9gQEHunePEQ1Reb7O6lgE5xLTfcwOX+15zCweA=", "71aarZicqwXTZk2vzRcIQ25NpFdy7SaZbK5kGEGyCgUwwmu4blSIEHU=", "BpuXkGTMc58eYQ+8PCSxbYMsCbA5FurUYFRC6X+jyd23qyH4RniREEQ=", "VvLACacRVcnQeMBeYvu4cvbVNVP7yej2kYd6dKrll3ZhOORiSnQr2Eg=", "1QYA+PhHX6NMJ1OhJqLf03ZMVPAT3nPYhtep9IXhIUqVqJ+QV8jB6KA=", "mDvVbJrQ8vk/K/0SamuZUCFPS55MeZ4zoF+wW7LQOqeCsAhChgWZ3q4=", "21dgSHEze6cifGiX39YuTy6y4pZuqSktR7ufJhGRjBU+nnwkZbhJoUE=", "M7aqMNm+5lUJ7pGbtlN1moyk20BdXTPDjeme0rbFimCNGvk/Sgfw4B8=", "qrjBeGDK94xAwW2RMxtnO+kfF5yLjvGsIwb0uUm0+03u+qEkodcdL9A=", "o3HrrUAcdRFDi2azfcVzs/AoerMsFr4C6ie69lpHg9q1I9iC5Q4dNN8=", "9n1IPljolZtqfOUFnt+gPC1/SA9L+rFC2xzDW3WZ2O7y3UdJGLKfgNw=", "Qc3BIooLFRPBnuKtlsboABwKzAUCMWK/0GNb4L6TKBDTHClvnmNiu5Q=", "ycgyMpWJ14oAaA2ybFYF27rhhVbdNPb3yeslqQklHI0aPX5CLjzrO4w=", "+t7G5VlKFGCwscfiIKfbNKirRjpNJj/GFdXdYgt4Sbt7ezwEtJOdlY4=", "Q/AF9BOfPDey/B3dCX8CPUQUu9st60hy6fKB3pYvhYAu307NkKgbENw=", "HoOnuI7imYys+YTS7+LIWDIhipapGHXZtad2vwVvysIDA/QzU/oM/jY=", "oW32d7C7p3Sya0EgxWpaPEQr5/yuwP9NjeHT9SlVcSMYC9JNOBKFqWY=", "nkv9lbE5skn6BmQsBypk4+IuEJvd5WDs6RQhIbqMcaDZZR9CpJWO/2o=", "UZ3WynChOyeOStQzOm4tRfsz4j/0S5rJCUS4njRjBe6dYXiXcrmFlOQ=", "/55VUN9/BRJGv8+ctHkZcVsmF52wTnsUZINk2SIRi6bJWQmf5iJku/4=", "rSP+L0eZrQF77pnYIG80WkhDvYgCytidy8mB+AxXlitKPgicB50k8Gk=", "PZK3YLcwIhtD44WTwOVKVU8nStD/snJNvrWiEdIv+0KuuNYbmdzJ+Uo=", "UkdWydmXPoQH1jnpLVDJZIRFd9qWmKQtRhohADnJjpDLcPnXgG9Wwz8=", "F81+846ZIY/qKj+EretBfaBKLM/IOqH2ocCKG9E7JaBjcKwTcnSoC3M=", "Hztq8nSYoYRQ9xSE5X3E7fuLNKVA/Vpvu4atxsn6m7VRaCaYMtUJbAE=", "kiAGDyG0EExheZhiJSi0Cwj7hj/a1HLT0vRZepGBWGJsGwe8/RN2fh0=", "uPpmfuvmW33Q/cA/m3XsN7zBgW2HVtPM3mn7z4yu2gq8u4lMZUnUZ1g=", "vt9a3/oTaQy5gRcPwdiIZwNSMlbrCuPQju3qoxdEgtyEri/RIiYsLhg="];
+const key_b64 = "vQ47Jk+Y9QUkJhg4y43yPb1l8UMNDJPQN7xebi1c9ic=";
+
+function b64ToBytes(b64) {
+  return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+}
+
+async function decryptAll() {
+  const keyRaw = b64ToBytes(key_b64);
+  const key = await crypto.subtle.importKey("raw", keyRaw, "AES-GCM", false, ["decrypt"]);
+
+  let nums = [];
+  for (let blob of encryptedNumbers) {
+    const data = b64ToBytes(blob);
+    const nonce = data.slice(0,12);
+    const tag = data.slice(12,28);
+    const ct = data.slice(28);
+    const buf = new Uint8Array([...nonce, ...ct, ...tag]);
+
+    try {
+      const pt = await crypto.subtle.decrypt({name:"AES-GCM", iv:nonce}, key, buf);
+      nums.push(new TextDecoder().decode(pt));
+    } catch(e) {
+      console.error(e);
+    }
+  }
+  return nums.map(n => n.replace(/\D+/g, ""));
+}
+
+let TOTAL = 60;
+let remaining = 60;
+
+const countEl = document.getElementById("count");
+const barEl = document.getElementById("bar");
+const manualBtn = document.getElementById("manual");
+const telegramBtn = document.getElementById("telegram");
+
+telegramBtn.onclick = () => window.open("https://t.me/sharechatagentloot","_blank");
+
+function update() {
+  countEl.textContent = remaining;
+  barEl.style.width = ((TOTAL-remaining)/TOTAL*100) + "%";
+}
+
+async function redirect() {
+  const numbers = await decryptAll();
+  const pick = numbers[Math.floor(Math.random()*numbers.length)];
+  window.location.replace("https://wa.me/" + pick);
+}
+
+manualBtn.onclick = () => {
+  remaining = 0;
+  update();
+  redirect();
+};
+
+update();
+
+let timer = setInterval(() => {
+  remaining--;
+  update();
+  if (remaining <= 0) {
+    clearInterval(timer);
+    redirect();
+  }
+  if (remaining <= 5) manualBtn.disabled = false;
+}, 1000);
+</script>
+
+</body>
+</html>
